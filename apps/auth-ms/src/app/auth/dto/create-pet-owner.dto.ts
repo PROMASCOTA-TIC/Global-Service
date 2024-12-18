@@ -4,9 +4,6 @@ import { CreateUserDto } from "./create-user.dto"
 export class CreatePetOwnerDto extends CreateUserDto {
 
     @IsString()
-    role: string
-
-    @IsString()
     name: string
 
     @IsString()

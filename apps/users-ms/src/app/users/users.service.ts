@@ -63,8 +63,9 @@ export class UsersService {
     return user;
   }
 
-  async findByEmail(email: string) {
-    const response = await this.petOwner.findOne({ where:  {email} });
+  async findByEmail(email: any) {
+    console.log(email);
+    const response = await this.petOwner.findOne({ where:  {email: email.email} });
     if (!response) {
       throw new RpcException('User not found');
     }

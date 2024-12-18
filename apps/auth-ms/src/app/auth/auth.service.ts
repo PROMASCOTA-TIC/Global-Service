@@ -17,7 +17,7 @@ export class AuthService {
   //TODO: Implementar Token JWT
   async login(loginUserDto: LoginDto) {
     const { email, password } = loginUserDto;
-
+    console.log(email);
     const user = await firstValueFrom(
       this.httpService.post('http://localhost:3001/api/users/email', {
         email: email,
@@ -30,7 +30,8 @@ export class AuthService {
       });
     }
 
-    const isPasswordValid = await bcrypt.compareSync(loginUserDto.password, user.data.password);
+    // const isPasswordValid = await bcrypt.compareSync(password, user.data.password);
+    const isPasswordValid = password === user.data.password;
     if (!isPasswordValid) {
       throw new RpcException({
         message: 'User/Password not valid'
@@ -41,9 +42,9 @@ export class AuthService {
   }
 
   async registerPetOwner(createPetOwnerDto: CreatePetOwnerDto) {
-    const { role: _, ...petOwner } = createPetOwnerDto;
+    const {...petOwner } = createPetOwnerDto;
     const user = await firstValueFrom(
-      this.httpService.post('http://localhost:3001/api/users', petOwner)
+      this.httpService.post('http://localhost:3001/api/users/create-pet-owner', petOwner)
     )
     console.log(user.data);
     return user.data;

@@ -35,11 +35,7 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": [
-        "apps/auth-ms-e2e/**/*",
-        "apps/auth-ms-e2e/**/*",
-        "apps/users-ms-e2e/**/*"
-      ]
+      "exclude": ["apps/comissions-ms-e2e/**/*"]
     }
   ]
 }

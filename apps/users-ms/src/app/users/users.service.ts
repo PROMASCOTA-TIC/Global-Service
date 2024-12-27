@@ -280,7 +280,39 @@ async updateEntrepreneur(
     return entrepreneur;
   }
 
+/**
+ * Actualizar el estado de un emprendedor y opcionalmente su comisión si el estado es APPROVED.
+ */
+async updateEntrepreneurStatusAndCommission(
+  id: string,
+  estado: 'PENDING' | 'APPROVED' | 'REJECTED',
+  comision?: number,
+): Promise<Entrepreneur> {
+  const entrepreneur = await this.findEntrepreneurById(id);
 
+  // Validar el estado
+  if (!['PENDING', 'APPROVED', 'REJECTED'].includes(estado)) {
+    throw new BadRequestException('Estado inválido.');
+  }
+
+  // Validar la comisión si el estado es APPROVED
+  if (estado === 'APPROVED') {
+    if (comision === undefined) {
+      throw new BadRequestException('La comisión es requerida para el estado APPROVED.');
+    }
+    if (comision < 0 || comision > 100) {
+      throw new BadRequestException('La comisión debe estar entre 0 y 100.');
+    }
+  }
+
+  // Actualizar el emprendedor
+  await entrepreneur.update({
+    estado,
+    ...(estado === 'APPROVED' && { comision }), // Actualizar comisión solo si es APPROVED
+  });
+
+  return entrepreneur;
+}
 
   updateAdmin(id: string, updateAdminDto: UpdateAdminDto) {
     this.findById(id);

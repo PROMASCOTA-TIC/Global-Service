@@ -110,7 +110,36 @@ async updateEntrepreneurCommission(@Payload() payload: { id: string; comision: n
   return this.usersService.updateEntrepreneurCommission(id, comision);
 }
 
-   
+/**
+ * Actualizar el estado de un emprendedor 
+ */
+@MessagePattern({ cmd: 'update_entrepreneur_status_and_commission' })
+async updateEntrepreneurStatusAndCommission(
+  @Payload() payload: { id: string; estado: 'PENDING' | 'APPROVED' | 'REJECTED'; comision?: number },
+) {
+  const { id, estado, comision } = payload;
+
+  // Validaciones
+  if (!['PENDING', 'APPROVED', 'REJECTED'].includes(estado)) {
+    throw new BadRequestException('Estado inválido.');
+  }
+
+  if (estado === 'APPROVED' && comision === undefined) {
+    throw new BadRequestException('La comisión es requerida para el estado APPROVED.');
+  }
+
+  if (comision !== undefined && (comision < 0 || comision > 100)) {
+    throw new BadRequestException('La comisión debe estar entre 0 y 100.');
+  }
+
+  this.logger.log(
+    `Command received: update_entrepreneur_status_and_commission for ID ${id} to ${estado} with commission ${comision}`,
+  );
+
+  return this.usersService.updateEntrepreneurStatusAndCommission(id, estado, comision);
+}
+
+
   @MessagePattern('update_pet_owner')
   updateAdmin(@Payload() updateAdminDto: UpdateAdminDto) {
     return this.usersService.updatePetOwner( updateAdminDto.id, updateAdminDto);

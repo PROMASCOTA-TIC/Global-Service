@@ -1,8 +1,9 @@
 import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreatePetOwnerDto } from './dto/create-pet-owner.dto';
+import { CreateEntrepreneurDto } from './dto/create-entrepreneur.dto';
 
 @Controller()
 export class AuthController {
@@ -20,7 +21,18 @@ export class AuthController {
 
   //TODO: Implementar el endpoint para registrar un emprendedor
   @MessagePattern('register-entrepreneur')
-  registerEntrepreneur(@Payload() createPetOwnerDto: CreatePetOwnerDto) {
-    return this.authService.registerPetOwner(createPetOwnerDto);
+  async registerEntrepreneur(@Payload() createEntrepreneurDto: CreateEntrepreneurDto) {
+    try {
+      console.log('Received data in Auth:', createEntrepreneurDto);
+  
+      const result = await this.authService.registerEntrepreneur(createEntrepreneurDto);
+      console.log('Result from User service:', result);
+  
+      return result;
+    } catch (error) {
+      console.error('Error in Auth registerEntrepreneur:', error);
+      throw new RpcException(error.message || 'Internal server error in Auth');
+    }
   }
+  
 }

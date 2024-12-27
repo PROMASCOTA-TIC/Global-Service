@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { CreatePetOwnerDto } from './dto/create-pet-owner.dto';
 import * as bcrypt from 'bcrypt';
+import { CreateEntrepreneurDto } from './dto/create-entrepreneur.dto';
 
 @Injectable()
 export class AuthService {
@@ -51,15 +52,17 @@ export class AuthService {
   }
 
   //TODO: Implementar registro de emprendedor (JP)
-  // async registerEntrepreneur(createUserDto: CreateUserDto) {
+  async registerEntrepreneur(createEntrepreneurDto: CreateEntrepreneurDto) {
+    const { ...entrepreneur } = createEntrepreneurDto;
+  
+    const user = await firstValueFrom(
+      this.httpService.post('http://localhost:3001/api/users/create-entrepreneur', entrepreneur)
+    );
+  
+    console.log('Entrepreneur registered:', user.data);
+    return user.data;
+  }
+  
 
-  //   const user = await firstValueFrom(
-  //     this.httpService.post('http://localhost:3001/api/users', {
-  //       email: email,
-  //       password: password,
-  //     })
-  //   )
-  //   return user.data;
-  // }
 
 }

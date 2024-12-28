@@ -67,7 +67,7 @@ async createEntrepreneur(
     createEntrepreneurDto.email,
   );
 
-  if (existingEmail) {
+  if (existingEmail) {  
     throw new BadRequestException(
       `El correo electrónico ${createEntrepreneurDto.email} ya está registrado.`,
     );
@@ -172,7 +172,7 @@ async createEntrepreneur(
 
     const entrepreneur = await this.entrepreneurModel.findOne({
         where: { email },
-        attributes: ['id', 'email', 'name', 'password', 'nombreEmprendimiento'], // Incluye solo los campos necesarios
+        attributes: ['id', 'email', 'name', 'password', 'nombreEmprendimiento','estado'], // Incluye solo los campos necesarios
     });
 
     if (!entrepreneur) {
@@ -185,6 +185,7 @@ async createEntrepreneur(
         name: entrepreneur.name,
         password: entrepreneur.password,
         businessName: entrepreneur.nombreEmprendimiento,
+        estado: entrepreneur.estado,
     };
 }
 

@@ -140,6 +140,23 @@ async updateEntrepreneurStatusAndCommission(
 }
 
 
+@MessagePattern('find_by_email')
+findByEmail(@Payload() email: string) {
+  return this.usersService.findByEmail(email);
+}
+
+
+@MessagePattern('find_entrepreneur_by_email')
+async findEntrepreneurByEmail(data: { email: string }) {
+  console.log('Finding entrepreneur by email:', data?.email);
+
+  if (!data?.email) {
+    throw new Error('Email is required');
+  }
+
+  return this.usersService.findEntrepreneurByEmail(data.email);
+}
+
   @MessagePattern('update_pet_owner')
   updateAdmin(@Payload() updateAdminDto: UpdateAdminDto) {
     return this.usersService.updatePetOwner( updateAdminDto.id, updateAdminDto);

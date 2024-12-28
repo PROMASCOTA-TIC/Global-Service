@@ -10,7 +10,7 @@ export class User extends Model {
     primaryKey: true,
     allowNull: false,
     unique: true,
-    defaultValue: DataType.UUIDV4, // Generar automáticamente un UUID
+    defaultValue: DataType.UUIDV4,
   })
   id: string;
 

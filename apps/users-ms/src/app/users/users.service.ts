@@ -11,6 +11,8 @@ import { v4 as UuidV4 } from 'uuid';
 import { Entrepreneur } from './models/entrepreneur.model';
 import { CreateEntrepreneurDTO } from './dto/create-entrepreneur.dto';
 import { UpdateEntrepreneurDTO } from './dto/update-entrepreneur.dto';
+import * as bcrypt from 'bcrypt';
+
 
 @Injectable()
 export class UsersService {
@@ -61,7 +63,7 @@ async createEntrepreneur(
   createEntrepreneurDto: CreateEntrepreneurDTO,
 ): Promise<Entrepreneur> {
   // Verificar si el correo electrónico ya está registrado
-  const existingEmail = await this.findEntrepreneurByEmail(
+  const existingEmail = await this.findCreateEntrepreneurByEmail(
     createEntrepreneurDto.email,
   );
 
@@ -108,9 +110,14 @@ async createEntrepreneur(
     });
   }
 
+  // Hashear la contraseña antes de almacenarla
+  const saltOrRounds = 10;
+  const hashedPassword = await bcrypt.hash(createEntrepreneurDto.password, saltOrRounds);
+
   // Convertir booleanos a CHAR(1)
   const entrepreneurData = {
     ...createEntrepreneurDto,
+    password: hashedPassword, // Asignar la contraseña hasheada
     isEntrepreneur: createEntrepreneurDto.isEntrepreneur,
     realizaEnvios: createEntrepreneurDto.realizaEnvios,
     soloRetiraEnTienda: createEntrepreneurDto.soloRetiraEnTienda,
@@ -123,6 +130,7 @@ async createEntrepreneur(
     comision: null, // Comisión inicializada en null
   });
 }
+
 
   /**
    * Buscar un emprendedor por su ID
@@ -149,11 +157,36 @@ async createEntrepreneur(
   /**
    * Buscar un emprendedor por correo electrónico
    */
-  async findEntrepreneurByEmail(email: string): Promise<Entrepreneur | null> {
+  async findCreateEntrepreneurByEmail(email: string): Promise<Entrepreneur | null> {
     return await this.entrepreneurModel.findOne({
       where: { email, isEntrepreneur: '1' },
     });
   }
+
+  async findEntrepreneurByEmail(email: string) {
+    console.log('Looking for entrepreneur in DB with email:', email);
+
+    if (!email) {
+        throw new RpcException('Email is required');
+    }
+
+    const entrepreneur = await this.entrepreneurModel.findOne({
+        where: { email },
+        attributes: ['id', 'email', 'name', 'password', 'nombreEmprendimiento'], // Incluye solo los campos necesarios
+    });
+
+    if (!entrepreneur) {
+        throw new RpcException('Entrepreneur not found');
+    }
+
+    return {
+        id: entrepreneur.id,
+        email: entrepreneur.email,
+        name: entrepreneur.name,
+        password: entrepreneur.password,
+        businessName: entrepreneur.nombreEmprendimiento,
+    };
+}
 
   /**
    * Eliminar un emprendedor por su ID

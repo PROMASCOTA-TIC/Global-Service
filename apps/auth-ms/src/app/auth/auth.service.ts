@@ -51,6 +51,39 @@ export class AuthService {
     return user.data;
   }
 
+  async loginEntrepreneur(loginDto: { email: string; password: string }) {
+    const { email, password } = loginDto;
+    console.log(`Login attempt for entrepreneur: ${email}`);
+
+    // Buscar al emprendedor por email
+    const userResponse = await firstValueFrom(
+      this.httpService.post('http://localhost:3001/api/users/find-entrepreneur-by-email', {
+        email,
+      }),
+    );
+
+    const entrepreneur = userResponse.data;
+
+    if (!entrepreneur) {
+      throw new RpcException('Invalid email or password');
+    }
+
+    // Validar la contraseña
+    const isPasswordValid = await bcrypt.compare(password, entrepreneur.password);
+    if (!isPasswordValid) {
+      throw new RpcException('Invalid email or password');
+    }
+
+    // Retornar datos del usuario (sin contraseña) o generar un token JWT
+    return {
+      id: entrepreneur.id,
+      email: entrepreneur.email,
+      name: entrepreneur.name,
+      businessName: entrepreneur.businessName,
+    };
+  }
+  
+  
   //TODO: Implementar registro de emprendedor (JP)
   async registerEntrepreneur(createEntrepreneurDto: CreateEntrepreneurDto) {
     const { ...entrepreneur } = createEntrepreneurDto;

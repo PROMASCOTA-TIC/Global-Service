@@ -34,5 +34,19 @@ export class AuthController {
       throw new RpcException(error.message || 'Internal server error in Auth');
     }
   }
+
+
+  @MessagePattern('login-entrepreneur')
+  async loginEntrepreneur(@Payload() loginDto: LoginDto) {
+    try {
+      console.log(`Login attempt for entrepreneur: ${loginDto.email}`);
+      const result = await this.authService.loginEntrepreneur(loginDto);
+      console.log('Entrepreneur authenticated:', result);
+      return result;
+    } catch (error) {
+      console.error('Error in Auth loginEntrepreneur:', error);
+      throw new RpcException(error.message || 'Invalid credentials');
+    }
+  }
   
 }

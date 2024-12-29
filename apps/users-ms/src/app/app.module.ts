@@ -20,7 +20,6 @@ import { Entrepreneur } from './users/models/entrepreneur.model';
       dialectOptions: {
         connectString: envs.connectionString,      
       },
-      //TODO: Agregar emprendedor al array de modelos (JP)
       models: [User, PetOwner,Entrepreneur],
     })
   ],

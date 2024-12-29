@@ -141,8 +141,8 @@ export class UsersController {
   }
 
   @MessagePattern('find_pet_owner_by_email')
-  findPetOwnerByEmail(@Payload() email: string) {
-    return this.usersService.findPetOwnerByEmail(email);
+  findPetOwnerByEmail(@Payload() data: {email: string}) {
+    return this.usersService.findPetOwnerByEmail(data.email);
   }
 
   @MessagePattern('delete_pet_owner')
@@ -156,8 +156,8 @@ export class UsersController {
   }
 
   @MessagePattern('find_admin_by_email')
-  findAdminByEmail(@Payload() email: string) {
-    return this.usersService.findAdminByEmail(email);
+  findAdminByEmail(@Payload() data: {email: string}) {
+    return this.usersService.findAdminByEmail(data.email);
   }
 
   @MessagePattern('find_entrepreneur_by_email')

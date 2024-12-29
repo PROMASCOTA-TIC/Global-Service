@@ -23,5 +23,5 @@ export class CreatePetOwnerDto extends CreateUserDto {
     @IsOptional()
     @IsArray()
     @IsString({each: true})
-    address: string[]
+    addresses: string[]
 }

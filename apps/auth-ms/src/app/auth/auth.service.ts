@@ -5,9 +5,9 @@ import { JwtService } from '@nestjs/jwt';
 import { firstValueFrom } from 'rxjs';
 import * as bcrypt from 'bcrypt';
 import { CreateEntrepreneurDto } from './dto/create-entrepreneur.dto';
-import { CreatePetOwnerDto } from './dto/create-pet-owner.dto';
 import { LoginDto } from './dto/login.dto';
 import { envs } from '../../config';
+import { CreatePetOwnerDto } from './dto/create-pet-owner.dto';
 
 @Injectable()
 export class AuthService {
@@ -16,27 +16,31 @@ export class AuthService {
     private readonly jwtService: JwtService
   ) { }
 
-  async signJWT(id: string, email: string) {
-    return this.jwtService.sign({ id, email });
+  async signJWT(email: string) {
+    const token = this.jwtService.sign({ email });
+    return token;
   }
 
   async verifyToken(token: string) {
+    console.log('Verifying token:', token);
+    
+    if (!token) {
+      throw new RpcException('Token is missing');
+    }
+  
+    if (typeof token !== 'string' || token.split('.').length !== 3) {
+      throw new RpcException('Invalid token format');
+    }
+  
     try {
-      const { sub, iat, exp, ...user } = this.jwtService.verify(token, {
-        secret: envs.jwtSecretKey,
+      const { iat, exp, ...user  } = await this.jwtService.verify(token, {
+        secret: envs.jwtSecretKey
       });
+      console.log('User from token:', user);
       return user;
     } catch (error) {
+      console.error('Error verifying token:', error);
       throw new RpcException('Invalid token');
-    }
-  }
-
-  async invalidateToken(token: string) {
-    try {
-      await this.invalidateToken(token);
-      return true;
-    } catch (error) {
-      throw new RpcException('Invalidate token failed');
     }
   }
 
@@ -45,7 +49,7 @@ export class AuthService {
     console.log(email);
     const user = await firstValueFrom(
       this.httpService.post('http://localhost:3001/api/users/admin-by-email', {
-        email: email,
+        email,
       })
     )
 
@@ -62,7 +66,7 @@ export class AuthService {
       });
     }
     const { password: _, ...result } = user.data;
-    const token = this.signJWT(result.id, result.email);
+    const token = await this.signJWT(result.email);
     const adminData = {
       id: result.id,
       email: result.email,
@@ -73,10 +77,9 @@ export class AuthService {
 
   async loginPetOwner(loginUserDto: LoginDto) {
     const { email, password } = loginUserDto;
-    console.log(email);
     const user = await firstValueFrom(
       this.httpService.post('http://localhost:3001/api/users/pet-owner-by-email', {
-        email: email,
+        email,
       })
     )
 
@@ -93,7 +96,7 @@ export class AuthService {
       });
     }
     const { password: _, ...result } = user.data;
-    const token = this.signJWT(result.id, result.email);
+    const token = await this.signJWT(result.email);
     const petOwnerData = {
       id: result.id,
       email: result.email,

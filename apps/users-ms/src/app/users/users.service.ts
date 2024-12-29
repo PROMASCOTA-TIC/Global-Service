@@ -158,9 +158,9 @@ export class UsersService {
 
     return {
       id: entrepreneur.id,
-      email: entrepreneur.email,
-      name: entrepreneur.name,
-      password: entrepreneur.password,
+      email: entrepreneur.user.email,
+      name: entrepreneur.user.name,
+      password: entrepreneur.user.password,
       businessName: entrepreneur.nombreEmprendimiento,
       estado: entrepreneur.estado,
     };
@@ -198,19 +198,28 @@ export class UsersService {
   }
 
   async createPetOwner(createPetOwnerDto: CreatePetOwnerDto) {
-    const { preferences, petPreferences, address, password, ...rest } = createPetOwnerDto;
+    const { preferences, petPreferences, addresses, name, email, password, ...rest } = createPetOwnerDto;
     try {
       const passwordHash = await bcrypt.hash(password, 10);
-      const user = {
+
+      const user = await this.user.create({
         id: UuidV4(),
+        email: email,
+        password: passwordHash,
+        name: name,
+        isPetOwner: '1',
+      });
+
+      const petOwner = {
+        id: UuidV4(),
+        userId: user.id,
         preferences: preferences.join(', '),
         petPreferences: petPreferences.join(', '),
-        address: address.join(', '),
-        password: passwordHash,
+        addresses: addresses?.join(', '),
         ...rest
       }
-      console.log(user);
-      await this.petOwner.create(user);
+      console.log(petOwner);
+      await this.petOwner.create(petOwner);
       return { message: 'Usuario creado correctamente' };
     } catch (error) {
       this.logger.error('Error al crear el usuario:', error.message);
@@ -219,34 +228,43 @@ export class UsersService {
   }
 
   async findPetOwnerById(id: string) {
-    const response = await this.petOwner.findByPk(id);
+    const response = await this.petOwner.findByPk(
+      id,
+      {
+        include: [User]
+      }
+    );
     if (!response) {
       throw new RpcException('User not found');
     }
-    const user = {
-      id: response.id,
-      email: response.email,
-      name: response.name,
+    const petOwner = {
+      id: response.petOwnerId,
+      email: response.user.email,
+      name: response.user.name,
       preferences: response.preferences,
       petPreferences: response.petPreferences,
-      address: response.address,
+      addresses: response.addresses,
       urlPhoto: response.urlPhoto,
       phoneNumber: response.phoneNumber,
     }
-    return user;
+    return petOwner;
   }
 
   async findPetOwnerByEmail(email: string) {
-    const response = await this.petOwner.findOne({ where: { email } });
+    console.log('Looking for pet owner in DB with email:', email);
+    const response = await this.user.findOne({
+      where: { email: email, isPetOwner: '1' },
+      include: [PetOwner]
+    });
     if (!response) {
       throw new RpcException('User not found');
     }
-    const user = {
-      id: response.id,
+    const petOwner = {
+      id: response.petOwner.id,
       email: response.email,
       password: response.password,
     }
-    return user;
+    return petOwner;
   }
 
   updatePetOwner(id: string, updatePetOwnerDto: UpdatePetOwnerDto) {
@@ -266,7 +284,7 @@ export class UsersService {
 
     if (
       updateEntrepreneurDto.email &&
-      updateEntrepreneurDto.email !== entrepreneur.email
+      updateEntrepreneurDto.email !== entrepreneur.user.email
     ) {
       const emailExists = await this.findEntrepreneurByEmail(updateEntrepreneurDto.email);
       if (emailExists) {
@@ -353,11 +371,18 @@ export class UsersService {
 
   async deletePetOwnerById(id: string) {
     await this.findPetOwnerById(id);
-    await this.petOwner.destroy({ where: { id: id } });
+    await this.petOwner.destroy({ where: { petOwnerId: id } });
   }
 
   async findAdminById(id: string) {
-    const response = await this.user.findByPk(id);
+    const response = await this.user.findOne(
+      {
+        where: {
+          id,
+          isAdmin: '1'
+        },
+      }
+    );
     if (!response) {
       throw new RpcException('User not found');
     }
@@ -369,7 +394,12 @@ export class UsersService {
   }
 
   async findAdminByEmail(email: string) {
-    const response = await this.user.findOne({ where: { email } });
+    const response = await this.user.findOne({
+      where: {
+        email,
+        isAdmin: '1'
+      }
+    });
     if (!response) {
       throw new RpcException('User not found');
     }

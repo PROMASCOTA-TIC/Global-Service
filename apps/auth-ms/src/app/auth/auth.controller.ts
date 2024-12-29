@@ -9,9 +9,24 @@ import { CreateEntrepreneurDto } from './dto/create-entrepreneur.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @MessagePattern('login')
-  create(@Payload() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  @MessagePattern('verify-token')
+  verifyToken(@Payload() token: string) {
+    return this.authService.verifyToken(token);
+  }
+
+  @MessagePattern('invalidate-token')
+  invalidateToken(@Payload() token: string) {
+    return this.authService.invalidateToken(token);
+  }
+
+  @MessagePattern('login-pet-owner')
+  loginPetOwner(@Payload() loginDto: LoginDto) {
+    return this.authService.loginPetOwner(loginDto);
+  }
+
+  @MessagePattern('login-admin')
+  loginAdmin(@Payload() loginDto: LoginDto) {
+    return this.authService.loginAdmin(loginDto);
   }
 
   @MessagePattern('register-pet-owner')

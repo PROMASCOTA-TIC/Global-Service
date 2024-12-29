@@ -5,6 +5,7 @@ import { Dialect } from 'sequelize';
 import { User } from './users/models/user.model';
 import { PetOwner } from './users/models/pet-owner.model';
 import { envs } from '../config';
+import { Entrepreneur } from './users/models/entrepreneur.model';
 
 @Module({
   imports: [
@@ -19,8 +20,7 @@ import { envs } from '../config';
       dialectOptions: {
         connectString: envs.connectionString,      
       },
-      //TODO: Agregar emprendedor al array de modelos (JP)
-      models: [User, PetOwner],
+      models: [User, PetOwner,Entrepreneur],
     })
   ],
   controllers: [],

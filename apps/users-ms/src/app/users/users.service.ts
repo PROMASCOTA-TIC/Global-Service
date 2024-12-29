@@ -368,6 +368,19 @@ export class UsersService {
     return admin;
   }
 
+  async findAdminByEmail(email: string) {
+    const response = await this.user.findOne({ where: { email } });
+    if (!response) {
+      throw new RpcException('User not found');
+    }
+    const admin = {
+      id: response.id,
+      email: response.email,
+      password: response.password,
+    }
+    return admin;
+  }
+
   updateAdmin(id: string, updateAdminDto: UpdateAdminDto) {
     this.findAdminById(id);
     const { id: _, ...admin } = updateAdminDto;

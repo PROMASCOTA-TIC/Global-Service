@@ -136,12 +136,12 @@ export class UsersController {
   }
 
   @MessagePattern('find_pet_owner_by_id')
-  findById(@Payload() id: string) {
+  findPetOwnerById(@Payload() id: string) {
     return this.usersService.findPetOwnerById(id);
   }
 
   @MessagePattern('find_pet_owner_by_email')
-  findByEmail(@Payload() email: string) {
+  findPetOwnerByEmail(@Payload() email: string) {
     return this.usersService.findPetOwnerByEmail(email);
   }
 
@@ -151,8 +151,13 @@ export class UsersController {
   }
 
   @MessagePattern('update_pet_owner')
-  updateAdmin(@Payload() updateAdminDto: UpdateAdminDto) {
+  updatePetOwner(@Payload() updateAdminDto: UpdateAdminDto) {
     return this.usersService.updatePetOwner(updateAdminDto.id, updateAdminDto);
+  }
+
+  @MessagePattern('find_admin_by_email')
+  findAdminByEmail(@Payload() email: string) {
+    return this.usersService.findAdminByEmail(email);
   }
 
   @MessagePattern('find_entrepreneur_by_email')

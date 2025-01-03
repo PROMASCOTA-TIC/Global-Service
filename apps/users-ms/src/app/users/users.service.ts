@@ -11,6 +11,9 @@ import { UpdateAdminDto } from './dto/update-admin.dto';
 import { Entrepreneur } from './models/entrepreneur.model';
 import { PetOwner } from './models/pet-owner.model';
 import { User } from './models/user.model';
+import { identity } from 'rxjs';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateStatusAndCommissionDTO } from './dto/update-comission-status.dto';
 
 
 @Injectable()
@@ -34,168 +37,278 @@ export class UsersService {
     }
   }
 
-  /**
-     * Crear un nuevo emprendedor
-     */
-  async createEntrepreneur(
-    createEntrepreneurDto: CreateEntrepreneurDTO,
-  ): Promise<Entrepreneur> {
-    // Verificar si el correo electrónico ya está registrado
-    const existingEmail = await this.findCreateEntrepreneurByEmail(
-      createEntrepreneurDto.email,
-    );
+  //Sevicio para crear un nuevo emprendedor
 
-    if (existingEmail) {
-      throw new BadRequestException(
-        `El correo electrónico ${createEntrepreneurDto.email} ya está registrado.`,
-      );
-    }
-
-    // Verificar si el RUC ya está registrado
-    const existingRuc = await this.entrepreneurModel.findOne({
-      where: { ruc: createEntrepreneurDto.ruc },
-    });
-
-    if (existingRuc) {
-      throw new BadRequestException(
-        `El RUC ${createEntrepreneurDto.ruc} ya está registrado.`,
-      );
-    }
-
-    // Validar y completar el campo horario
-    if (createEntrepreneurDto.horario) {
-      const diasValidos = [
-        'Lunes',
-        'Martes',
-        'Miércoles',
-        'Jueves',
-        'Viernes',
-        'Sábado',
-        'Domingo',
-      ];
-      createEntrepreneurDto.horario = diasValidos.map((dia) => {
-        const diaEncontrado = createEntrepreneurDto.horario.find(
-          (h) => h.dia === dia,
-        );
-        return (
-          diaEncontrado || {
-            dia,
-            horaApertura: null,
-            horaCierre: null,
-            cerrado: '1', // Cerrado por defecto
-          }
-        );
+  async createEntrepreneur(createEntrepreneurDto: CreateEntrepreneurDTO) {
+    const {
+      email,
+      password,
+      name,
+      nombreEmprendimiento,
+      ruc,
+      numeroCelular,
+      bancoNombre,
+      bancoTipoCuenta,
+      bancoNumeroCuenta,
+      bancoNombreDuenoCuenta,
+      realizaEnvios,
+      soloRetiraEnTienda,
+      direccionLocal,
+      sectorLocal,
+      horario,
+      aceptoTerminos,
+      ...rest
+    } = createEntrepreneurDto;
+  
+    try {
+      // Hashear la contraseña
+      const passwordHash = await bcrypt.hash(password, 10);
+  
+      // Crear usuario
+      const user = await this.user.create({
+        id: UuidV4(),
+        email,
+        password: passwordHash,
+        name,
+        isEntrepreneur: '1',
       });
+
+      const entrepreneurData = {
+        identity: UuidV4(),
+        userId: user.id,
+        nombreEmprendimiento,
+        ruc,
+        numeroCelular,
+        bancoNombre,
+        bancoTipoCuenta,
+        bancoNumeroCuenta,
+        bancoNombreDuenoCuenta,
+        realizaEnvios: realizaEnvios === '1', 
+        soloRetiraEnTienda: soloRetiraEnTienda === '1', // Convertir a booleano
+        direccionLocal, // Asegúrate de que esté presente
+        sectorLocal, // Asegúrate de que esté presente
+        horario: horario || [], // Evitar errores si está undefined
+        aceptoTerminos: aceptoTerminos === '1', // Convertir a booleano
+        estado: 'PENDING', // Valor predeterminado para estado
+        comision: rest.comision || null,
+        ...rest,
+      };
+  
+      console.log('Datos del emprendedor:', entrepreneurData);
+  
+      // Guardar en la base de datos
+      const entrepreneur = await this.entrepreneurModel.create(entrepreneurData);
+      //await this.entrepreneurModel.create(entrepreneurData);
+  
+      return { message: 'Usuario creado correctamente',
+        user,
+        entrepreneur,
+       };
+    } catch (error) {
+      if (error.errors) {
+        error.errors.forEach((err) => {
+          this.logger.error(`Error en el campo ${err.path}: ${err.message}`);
+        });
+      } else {
+        this.logger.error('Error no identificado:', error.message);
+      }
+      throw new BadRequestException(error.message);
     }
-
-    // Hashear la contraseña antes de almacenarla
-    const saltOrRounds = 10;
-    const hashedPassword = await bcrypt.hash(createEntrepreneurDto.password, saltOrRounds);
-
-    // Convertir booleanos a CHAR(1)
-    const entrepreneurData = {
-      ...createEntrepreneurDto,
-      password: hashedPassword, // Asignar la contraseña hasheada
-      isEntrepreneur: createEntrepreneurDto.isEntrepreneur,
-      realizaEnvios: createEntrepreneurDto.realizaEnvios,
-      soloRetiraEnTienda: createEntrepreneurDto.soloRetiraEnTienda,
-      aceptoTerminos: createEntrepreneurDto.aceptoTerminos,
-    };
-
-    return await this.entrepreneurModel.create({
-      ...entrepreneurData,
-      estado: 'PENDING', // Estado inicial
-      comision: null, // Comisión inicializada en null
-    });
   }
+  
 
-  /**
-   * Buscar un emprendedor por su ID
-   */
-  async findEntrepreneurById(id: string): Promise<Entrepreneur> {
-    const entrepreneur = await this.entrepreneurModel.findOne({
-      where: { id, isEntrepreneur: '1' },
-    });
-    if (!entrepreneur) {
-      throw new NotFoundException(`El emprendedor con ID ${id} no existe.`);
-    }
-    return entrepreneur;
-  }
-
-  /**
-   * Buscar emprendedores por estado
-   */
-  async findEntrepreneursByState(estado: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<Entrepreneur[]> {
-    return await this.entrepreneurModel.findAll({
-      where: { estado, isEntrepreneur: '1' },
-    });
-  }
-
-  /**
-   * Buscar un emprendedor por correo electrónico
-   */
-  async findCreateEntrepreneurByEmail(email: string): Promise<Entrepreneur | null> {
-    return await this.entrepreneurModel.findOne({
-      where: { email, isEntrepreneur: '1' },
-    });
-  }
-
-  async findEntrepreneurByEmail(email: string) {
-    console.log('Looking for entrepreneur in DB with email:', email);
-
-    if (!email) {
-      throw new RpcException('Email is required');
-    }
-
-    const entrepreneur = await this.entrepreneurModel.findOne({
-      where: { email },
-      attributes: ['id', 'email', 'name', 'password', 'nombreEmprendimiento', 'estado'], // Incluye solo los campos necesarios
-    });
-
-    if (!entrepreneur) {
-      throw new RpcException('Entrepreneur not found');
-    }
-
-    return {
-      id: entrepreneur.id,
-      email: entrepreneur.user.email,
-      name: entrepreneur.user.name,
-      password: entrepreneur.user.password,
-      businessName: entrepreneur.nombreEmprendimiento,
-      estado: entrepreneur.estado,
-    };
-  }
-
-  /**
-   * Eliminar un emprendedor por su ID
-   */
-  async deleteEntrepreneurById(id: string): Promise<void> {
-    const entrepreneur = await this.findEntrepreneurById(id);
-    await entrepreneur.destroy();
-  }
-
-  /**
-   * Cambiar el estado de un emprendedor
-   */
-  async updateEntrepreneurStatus(
-    id: string,
-    estado: 'PENDING' | 'APPROVED' | 'REJECTED',
-  ): Promise<Entrepreneur> {
-    const entrepreneur = await this.findEntrepreneurById(id);
-    await entrepreneur.update({ estado });
-    return entrepreneur;
-  }
-
-  /**
-   * Obtener todos los emprendedores
-   * @returns Lista de emprendedores
-   */
+  /**Obtener todos los emprendedores*/
   async findAllEntrepreneurs(): Promise<Entrepreneur[]> {
     return await this.entrepreneurModel.findAll({
-      where: { isEntrepreneur: '1' }, // Filtrar solo emprendedores
-      attributes: { exclude: ['password'] }, // Excluir la contraseña
+      include: [
+        {
+          model: this.user,
+          where: { isEntrepreneur: '1' }, 
+          attributes: ['id', 'email', 'name', 'createdAt'],
+          required: true,
+        },
+      ],
+      attributes: { exclude: ['password'] }, // Excluir la contraseña del emprendedor
     });
   }
+  
+ /**Buscar un emprendedor por su ID*/ 
+  async findEntrepreneurById(id: string) {
+   const response = await this.entrepreneurModel.findByPk(id,
+  {
+    include: [User]
+  }
+   );
+   if (!response) {
+     throw new RpcException('User not found');
+   }
+    const entrepreneur = {
+      idEntrepreneur: response.idEntrepreneur,
+      email: response.user.email,
+      name: response.user.name,
+      businessName: response.nombreEmprendimiento,
+      ruc: response.ruc,
+      phoneNumber: response.numeroCelular,
+      bankName: response.bancoNombre,
+      bankAccountType: response.bancoTipoCuenta,
+      bankAccountNumber: response.bancoNumeroCuenta,
+      bankAccountOwner: response.bancoNombreDuenoCuenta,
+      makeDeliveries: response.realizaEnvios,
+      onlyPickUpInStore: response.soloRetiraEnTienda,
+      localAddress: response.direccionLocal,
+      localSector: response.sectorLocal,
+      businessHours: response.horario,
+      acceptedTerms: response.aceptoTerminos,
+      state: response.estado,
+      commission: response.comision,
+    }
+    return entrepreneur;
+  }
+
+  /**
+   * Eliminar un emprendedor por su ID */
+  async deleteEntrepreneurById(idEntrepreneur: string): Promise<void> {
+    try {
+      const entrepreneur = await this.entrepreneurModel.findOne({
+        where: { idEntrepreneur : idEntrepreneur },
+        include: [
+          {
+            model: this.user, 
+            attributes: ['id'], 
+          },
+        ],
+      });
+  
+      if (!entrepreneur) {
+        throw new NotFoundException(`El emprendedor con ID ${idEntrepreneur} no existe.`);
+      }
+      if (entrepreneur.user) {
+        await this.user.update(
+          { deletedAt: new Date() }, 
+          { where: { id: entrepreneur.user.id } } 
+        );
+      }
+      await entrepreneur.destroy();
+      this.logger.log(
+        `El emprendedor con ID ${idEntrepreneur} y su usuario relacionado han sido eliminados.`
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error al eliminar el emprendedor con ID ${idEntrepreneur}:`,
+        error.message
+      );
+      throw new BadRequestException(`No se pudo eliminar el emprendedor: ${error.message}`);
+    }
+  }
+  
+
+  
+// Buscar emprendedor por correo electronicvo 
+async findEntrepreneurByEmail(email: string) {
+  console.log('Looking for entrepreneur in DB with email:', email);
+  const response = await this.user.findOne({
+    where: { email: email, isEntrepreneur: '1' },
+    include: [Entrepreneur]
+  });
+  if (!response) {
+    throw new RpcException('User not found');
+  }
+  const entrEpreneur = {
+    id: response.entrepreneur.id,
+    email: response.email,
+    password: response.password,
+  }
+  return entrEpreneur;
+
+}
+//actualizar emprendedor
+async updateEntrepreneur(idEntrepreneur: string, updateEntrepreneurDto: UpdateEntrepreneurDTO) {
+  const entrepreneur = await this.entrepreneurModel.findOne({
+    where: { idEntrepreneur },
+  });
+
+  if (!entrepreneur) {
+    throw new NotFoundException(`No se encontró un emprendedor con el ID: ${idEntrepreneur}`);
+  }
+  const { idEntrepreneur: _, ...updateData } = updateEntrepreneurDto;
+
+  // Convertir valores booleanos para el modelo
+  const updatePayload = {
+    ...updateData,
+    realizaEnvios: updateData.realizaEnvios === '1', // Convertir a booleano si está presente
+    soloRetiraEnTienda: updateData.soloRetiraEnTienda === '1', // Convertir a booleano si está presente
+  };
+  
+  // Actualizar el emprendedor
+  await this.entrepreneurModel.update(updatePayload, {
+    where: { idEntrepreneur },
+  });
+
+  return { message: 'Emprendedor actualizado correctamente' };
+}
+
+// obtener emprendedores por estado
+async findEntrepreneursByState(estado: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<Entrepreneur[]> {
+  if (!['PENDING', 'APPROVED', 'REJECTED'].includes(estado)) {
+    throw new BadRequestException(`Estado inválido: ${estado}`);
+  }
+
+  const entrepreneurs = await this.entrepreneurModel.findAll({
+    where: { estado },
+    include: [
+      {
+        model: this.user,
+        attributes: ['id', 'email', 'name'], 
+      },
+    ],
+  });
+
+  if (!entrepreneurs.length) {
+    throw new NotFoundException(`No se encontraron emprendedores con el estado: ${estado}`);
+  }
+
+  return entrepreneurs;
+}
+
+//update status y comision
+async updateEntrepreneurStatusAndCommission(
+  idEntrepreneur: string,
+  updateStatusAndCommissionDTO: UpdateStatusAndCommissionDTO,
+) {
+  const entrepreneur = await this.entrepreneurModel.findOne({
+    where: { idEntrepreneur },
+  });
+
+  if (!entrepreneur) {
+    throw new NotFoundException(`No se encontró un emprendedor con el ID: ${idEntrepreneur}`);
+  }
+
+  const { estado, comision } = updateStatusAndCommissionDTO;
+
+  if (estado === 'APPROVED' && (comision === undefined || comision === null)) {
+    throw new BadRequestException(
+      'La comisión es obligatoria cuando el estado es APPROVED',
+    );
+  }
+
+  if (estado === 'REJECTED' && comision !== undefined) {
+    throw new BadRequestException('La comisión no debe asignarse cuando el estado es REJECTED');
+  }
+
+  await this.entrepreneurModel.update(
+    { estado, comision: estado === 'APPROVED' ? comision : null },
+    { where: { idEntrepreneur } },
+  );
+
+  return { message: `El estado y la comisión del emprendedor han sido actualizados` };
+}
+
+ // Buscar un emprendedor por correo electrónico
+ async findCreateEntrepreneurByEmail(email: string): Promise<Entrepreneur | null> {
+  return await this.entrepreneurModel.findOne({
+    where: { email, isEntrepreneur: '1' },
+  });
+}
 
   async createPetOwner(createPetOwnerDto: CreatePetOwnerDto) {
     const { preferences, petPreferences, addresses, name, email, password, ...rest } = createPetOwnerDto;
@@ -271,102 +384,6 @@ export class UsersService {
     this.findPetOwnerById(id);
     const { id: _, ...petOwner } = updatePetOwnerDto;
     return this.petOwner.update(petOwner, { where: { id } });
-  }
-
-  /**
-  * Actualizar los datos de un emprendedor
-  */
-  async updateEntrepreneur(
-    id: string,
-    updateEntrepreneurDto: UpdateEntrepreneurDTO,
-  ): Promise<Entrepreneur> {
-    const entrepreneur = await this.findEntrepreneurById(id);
-
-    if (
-      updateEntrepreneurDto.email &&
-      updateEntrepreneurDto.email !== entrepreneur.user.email
-    ) {
-      const emailExists = await this.findEntrepreneurByEmail(updateEntrepreneurDto.email);
-      if (emailExists) {
-        throw new BadRequestException(
-          `El correo electrónico ${updateEntrepreneurDto.email} ya está en uso.`,
-        );
-      }
-    }
-
-    // Validar y completar el campo horario
-    if (updateEntrepreneurDto.horario) {
-      const diasValidos = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-      const horarioCompleto = diasValidos.map((dia) => {
-        const diaEncontrado = updateEntrepreneurDto.horario.find((h) => h.dia === dia);
-        return (
-          diaEncontrado || { dia, horaApertura: null, horaCierre: null, cerrado: '1' } // Cerrado como '1'
-        );
-      });
-
-      // Convertir el campo `cerrado` a CHAR(1)
-      updateEntrepreneurDto.horario = horarioCompleto.map((h) => ({
-        ...h,
-        cerrado: h.cerrado === '1' || h.cerrado === '0' ? h.cerrado : '1', // Asegurar '1' o '0'
-      }));
-    }
-
-    // Convertir booleanos a CHAR(1)
-    const updateData = {
-      ...updateEntrepreneurDto,
-      realizaEnvios: updateEntrepreneurDto.realizaEnvios || '0',
-      soloRetiraEnTienda: updateEntrepreneurDto.soloRetiraEnTienda || '0',
-      aceptoTerminos: updateEntrepreneurDto.aceptoTerminos || '0',
-    };
-
-    await entrepreneur.update(updateData);
-    return entrepreneur;
-  }
-
-  /**
-   * Actualizar solo la comisión de un emprendedor
-   */
-  async updateEntrepreneurCommission(id: string, comision: number): Promise<Entrepreneur> {
-    const entrepreneur = await this.findEntrepreneurById(id);
-    if (comision < 0 || comision > 100) {
-      throw new BadRequestException('La comisión debe estar entre 0 y 100.');
-    }
-    await entrepreneur.update({ comision });
-    return entrepreneur;
-  }
-
-  /**
-   * Actualizar el estado de un emprendedor y opcionalmente su comisión si el estado es APPROVED.
-   */
-  async updateEntrepreneurStatusAndCommission(
-    id: string,
-    estado: 'PENDING' | 'APPROVED' | 'REJECTED',
-    comision?: number,
-  ): Promise<Entrepreneur> {
-    const entrepreneur = await this.findEntrepreneurById(id);
-
-    // Validar el estado
-    if (!['PENDING', 'APPROVED', 'REJECTED'].includes(estado)) {
-      throw new BadRequestException('Estado inválido.');
-    }
-
-    // Validar la comisión si el estado es APPROVED
-    if (estado === 'APPROVED') {
-      if (comision === undefined) {
-        throw new BadRequestException('La comisión es requerida para el estado APPROVED.');
-      }
-      if (comision < 0 || comision > 100) {
-        throw new BadRequestException('La comisión debe estar entre 0 y 100.');
-      }
-    }
-
-    // Actualizar el emprendedor
-    await entrepreneur.update({
-      estado,
-      ...(estado === 'APPROVED' && { comision }), // Actualizar comisión solo si es APPROVED
-    });
-
-    return entrepreneur;
   }
 
   async deletePetOwnerById(id: string) {

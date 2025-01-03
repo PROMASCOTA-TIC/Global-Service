@@ -5,6 +5,7 @@ import { CreateEntrepreneurDTO } from './dto/create-entrepreneur.dto';
 import { UpdateEntrepreneurDTO } from './dto/update-entrepreneur.dto';
 import { CreatePetOwnerDto } from './dto/create-pet-owner.dto';
 import { UsersService } from './users.service';
+import { UpdateStatusAndCommissionDTO } from './dto/update-comission-status.dto';
 
 @Controller('users')
 export class UsersController {
@@ -13,36 +14,21 @@ export class UsersController {
     private readonly usersService: UsersService
   ) { }
 
-  /**
-  * Crear un nuevo emprendedor
-  */
+  // Crear un nuevo emprendedor
   @MessagePattern({ cmd: 'create_entrepreneur' })
   async createEntrepreneur(@Payload() createEntrepreneurDto: CreateEntrepreneurDTO) {
     this.logger.log('Command received: create_entrepreneur', createEntrepreneurDto);
     return this.usersService.createEntrepreneur(createEntrepreneurDto);
   }
 
-  /**
-   * Obtener todos los emprendedores
-   */
+  // Obtener todos los emprendedores
   @MessagePattern({ cmd: 'get_all_entrepreneurs' })
   async getAllEntrepreneurs() {
     this.logger.log('Command received: get_all_entrepreneurs');
     return this.usersService.findAllEntrepreneurs();
   }
 
-  /**
-   * Obtener emprendedores por estado
-   */
-  @MessagePattern({ cmd: 'get_entrepreneurs_by_state' })
-  async getEntrepreneursByState(@Payload() estado: 'PENDING' | 'APPROVED' | 'REJECTED') {
-    this.logger.log(`Command received: get_entrepreneurs_by_state for state ${estado}`);
-    return this.usersService.findEntrepreneursByState(estado);
-  }
-
-  /**
-   * Eliminar un emprendedor por su ID
-   */
+  // Eliminar un emprendedor por su ID
   @MessagePattern({ cmd: 'delete_entrepreneur_by_id' })
   async deleteEntrepreneurById(@Payload() id: string) {
     this.logger.log(`Command received: delete_entrepreneur_by_id for ID ${id}`);
@@ -50,85 +36,46 @@ export class UsersController {
     return { message: 'Emprendedor eliminado exitosamente' };
   }
 
-
-  /**
-   * Cambiar el estado de un emprendedor
-   */
-  @MessagePattern({ cmd: 'update_entrepreneur_status' })
-  async updateEntrepreneurStatus(
-    @Payload() payload: { id: string; estado: 'PENDING' | 'APPROVED' | 'REJECTED' },
-  ) {
-    const { id, estado } = payload;
-    this.logger.log(`Command received: update_entrepreneur_status for ID ${id} to ${estado}`);
-    return this.usersService.updateEntrepreneurStatus(id, estado);
-  }
-
-  /**
-   * Obtener un emprendedor por su ID
-   */
+  //Obtener un emprendedor por su ID 
   @MessagePattern({ cmd: 'get_entrepreneur_by_id' })
   async getEntrepreneurById(@Payload() id: string) {
     this.logger.log(`Command received: get_entrepreneur_by_id for ID ${id}`);
     return this.usersService.findEntrepreneurById(id);
   }
 
-  /**
-   * Actualizar un emprendedor por su ID
-   */
-  @MessagePattern({ cmd: 'update_entrepreneur' })
-  async updateEntrepreneur(@Payload() payload: { id: string; updateData: UpdateEntrepreneurDTO }) {
-    const { id, updateData } = payload;
+  //actualizar emprendedor
+@MessagePattern('update_entrepreneur')
+async updateEntrepreneur(@Payload() updateEntrepreneurDto: UpdateEntrepreneurDTO) {
+  const { idEntrepreneur } = updateEntrepreneurDto;
+  if (!idEntrepreneur) {
+    throw new BadRequestException('El campo idEntrepreneur es obligatorio.');
+  }
+  return this.usersService.updateEntrepreneur(idEntrepreneur, updateEntrepreneurDto);
+}
 
-    if (updateData.comision !== undefined) {
-      this.logger.log(`Updating commission for Entrepreneur ID ${id}: ${updateData.comision}`);
-    }
 
-    return this.usersService.updateEntrepreneur(id, updateData);
+
+  // obtener emprendedor por estado
+  @MessagePattern({ cmd: 'get_entrepreneurs_by_state' })
+  async getEntrepreneursByState(@Payload() estado: 'PENDING' | 'APPROVED' | 'REJECTED') {
+    this.logger.log(`Command received: get_entrepreneurs_by_state with estado=${estado}`);
+    return this.usersService.findEntrepreneursByState(estado);
   }
 
-  /**
-   * Actualizar solo la comisión de un emprendedor
-   */
-  @MessagePattern({ cmd: 'update_entrepreneur_commission' })
-  async updateEntrepreneurCommission(@Payload() payload: { id: string; comision: number }) {
-    const { id, comision } = payload;
-
-    if (comision < 0 || comision > 100) {
-      throw new BadRequestException('La comisión debe estar entre 0 y 100.');
-    }
-
-    this.logger.log(`Command received: update_entrepreneur_commission for ID ${id} with commission ${comision}`);
-    return this.usersService.updateEntrepreneurCommission(id, comision);
+//actualizar estado y copmision
+@MessagePattern({ cmd: 'update_entrepreneur_status_and_commission' })
+async updateEntrepreneurStatusAndCommission(
+  @Payload() payload: { idEntrepreneur: string; updateStatusAndCommissionDTO: UpdateStatusAndCommissionDTO },
+) {
+  const { idEntrepreneur, updateStatusAndCommissionDTO } = payload;
+  if (!idEntrepreneur) {
+    throw new BadRequestException('El ID del emprendedor es obligatorio');
   }
-
-  /**
-   * Actualizar el estado de un emprendedor 
-   */
-  @MessagePattern({ cmd: 'update_entrepreneur_status_and_commission' })
-  async updateEntrepreneurStatusAndCommission(
-    @Payload() payload: { id: string; estado: 'PENDING' | 'APPROVED' | 'REJECTED'; comision?: number },
-  ) {
-    const { id, estado, comision } = payload;
-
-    // Validaciones
-    if (!['PENDING', 'APPROVED', 'REJECTED'].includes(estado)) {
-      throw new BadRequestException('Estado inválido.');
-    }
-
-    if (estado === 'APPROVED' && comision === undefined) {
-      throw new BadRequestException('La comisión es requerida para el estado APPROVED.');
-    }
-
-    if (comision !== undefined && (comision < 0 || comision > 100)) {
-      throw new BadRequestException('La comisión debe estar entre 0 y 100.');
-    }
-
-    this.logger.log(
-      `Command received: update_entrepreneur_status_and_commission for ID ${id} to ${estado} with commission ${comision}`,
-    );
-
-    return this.usersService.updateEntrepreneurStatusAndCommission(id, estado, comision);
-  }
+  return this.usersService.updateEntrepreneurStatusAndCommission(
+    idEntrepreneur,
+    updateStatusAndCommissionDTO,
+  );
+}
 
   @MessagePattern('create_pet_owner')
   createPetOwner(@Payload() createPetOwnerDto: CreatePetOwnerDto) {
@@ -167,7 +114,6 @@ export class UsersController {
     if (!data?.email) {
       throw new Error('Email is required');
     }
-
     return this.usersService.findEntrepreneurByEmail(data.email);
   }
 }

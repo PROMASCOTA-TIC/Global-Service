@@ -22,7 +22,7 @@ export class Entrepreneur extends Model {
     defaultValue: DataType.UUIDV4,
     field: 'ENTREPRENEUR_ID',
   })
-  id!: string;
+  idEntrepreneur!: string;
 
   @ForeignKey(() => User)
   @Column({

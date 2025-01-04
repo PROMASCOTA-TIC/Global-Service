@@ -6,6 +6,7 @@ import { UpdateEntrepreneurDTO } from './dto/update-entrepreneur.dto';
 import { CreatePetOwnerDto } from './dto/create-pet-owner.dto';
 import { UsersService } from './users.service';
 import { UpdateStatusAndCommissionDTO } from './dto/update-comission-status.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -116,4 +117,10 @@ async updateEntrepreneurStatusAndCommission(
     }
     return this.usersService.findEntrepreneurByEmail(data.email);
   }
+
+  @MessagePattern('create_user')
+  async createUser(@Payload() createUserDto: CreateUserDto) {
+    return this.usersService.createUser(createUserDto);
+  }
+
 }

@@ -402,13 +402,13 @@ export class UsersService {
     }
 
     async createUser(createUserDto: CreateUserDto) {
-        const { password } = createUserDto;
+        const { password: password, ...rest } = createUserDto;
         try {
             const passwordHash = await bcrypt.hash(password, 10);
             const user = await this.user.create({
                 id: UuidV4(),
                 password: passwordHash,
-                ...createUserDto,
+                ...rest,
             });
             return user;
         } catch (error) {

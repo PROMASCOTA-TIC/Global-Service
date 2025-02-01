@@ -77,10 +77,12 @@ export class CreateEntrepreneurDTO extends CreateUserDto {
   horario: HorarioDTO[];
 
   @IsArray({ message: 'fotosLocal debe ser un arreglo de strings' })
-  fotosLocal: string[];
+  @IsString({ each: true })
+  fotosLocal?: string;
 
   @IsArray({ message: 'fotosLogotipo debe ser un arreglo de strings' })
-  fotosLogotipo: string[];
+  @IsString({ each: true })
+  fotosLogotipo?: string;
 
   @IsEnum(['1', '0'], { message: 'aceptoTerminos debe ser "1" (true) o "0" (false)' })
   aceptoTerminos: '1' | '0';

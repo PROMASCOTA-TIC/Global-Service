@@ -37,7 +37,6 @@ export class UsersService {
     }
 
     //Sevicio para crear un nuevo emprendedor
-
     async createEntrepreneur(createEntrepreneurDto: CreateEntrepreneurDTO) {
         const {
             email,
@@ -59,13 +58,15 @@ export class UsersService {
             sectorLocal,
             horario,
             aceptoTerminos,
+            fotosLocal,
+            fotosLogotipo,
             ...rest
         } = createEntrepreneurDto;
-
+    
         try {
             // Hashear la contraseña
             const passwordHash = await bcrypt.hash(password, 10);
-
+    
             // Crear usuario
             const user = await this.createUser({
                 email,
@@ -73,7 +74,11 @@ export class UsersService {
                 name,
                 isEntrepreneur: '1',
             });
-
+    
+            // Convertir arrays de imágenes en strings separados por comas
+            const formattedFotosLocal = Array.isArray(fotosLocal) ? fotosLocal.join(', ') : fotosLocal || '';
+            const formattedFotosLogotipo = Array.isArray(fotosLogotipo) ? fotosLogotipo.join(', ') : fotosLogotipo || '';
+    
             const entrepreneurData = {
                 identity: UuidV4(),
                 userId: user.id,
@@ -95,15 +100,16 @@ export class UsersService {
                 aceptoTerminos: aceptoTerminos === '1',
                 estado: 'PENDING',
                 comision: rest.comision || null,
+                fotosLocal: formattedFotosLocal, // Guardamos como string
+                fotosLogotipo: formattedFotosLogotipo, // Guardamos como string
                 ...rest,
             };
-
+    
             console.log('Datos del emprendedor:', entrepreneurData);
-
+    
             // Guardar en la base de datos
             const entrepreneur = await this.entrepreneurModel.create(entrepreneurData);
-            //await this.entrepreneurModel.create(entrepreneurData);
-
+    
             return {
                 message: 'Usuario creado correctamente',
                 user,
@@ -120,7 +126,7 @@ export class UsersService {
             throw new BadRequestException(error.message);
         }
     }
-
+    
 
     /**Obtener todos los emprendedores*/
     async findAllEntrepreneurs(): Promise<Entrepreneur[]> {

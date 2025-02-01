@@ -164,21 +164,19 @@ export class Entrepreneur extends Model {
     cerrado?: boolean;
   }>;
 
-  @AllowNull(true)
   @Column({
-    type: DataType.JSON,
-    allowNull: true,
+    type: DataType.TEXT,
+    allowNull: false,
     field: 'FOTOS_LOCAL',
   })
-  fotosLocal!: string[];
+  fotosLocal: string;
 
-  @AllowNull(true)
   @Column({
-    type: DataType.JSON,
-    allowNull: true,
+    type: DataType.TEXT,
+    allowNull: false,
     field: 'FOTOS_LOGOTIPO',
   })
-  fotosLogotipo!: string[];
+  fotosLogotipo: string;
 
   @AllowNull(false)
   @Column({

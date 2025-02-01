@@ -4,7 +4,6 @@ import {
   IsArray,
   IsOptional,
   IsEnum,
-  Matches,
   MinLength,
   MaxLength,
   IsNumber,
@@ -16,24 +15,26 @@ import {
 import { Type } from 'class-transformer';
 import { CreateUserDto } from './create-user.dto';
 
-export class CreateEntrepreneurDTO extends CreateUserDto  {
-
+export class CreateEntrepreneurDTO extends CreateUserDto {
   @IsString()
   @MinLength(5, { message: 'El nombre debe tener al menos 5 caracteres' })
   @IsNotEmpty({ message: 'El nombre no puede estar vacío' })
   name: string;
 
-
   @IsString()
+  @IsNotEmpty({ message: 'El nombre del emprendimiento no puede estar vacío' })
   nombreEmprendimiento: string;
 
   @IsString()
+  @IsNotEmpty({ message: 'El RUC no puede estar vacío' })
   ruc: string;
 
   @IsString()
+  @IsNotEmpty({ message: 'El número de celular no puede estar vacío' })
   numeroCelular: string;
 
   @IsString()
+  @IsNotEmpty({ message: 'El nombre del banco no puede estar vacío' })
   bancoNombre: string;
 
   @IsEnum(['Ahorros', 'Corriente'], {
@@ -42,9 +43,11 @@ export class CreateEntrepreneurDTO extends CreateUserDto  {
   bancoTipoCuenta: 'Ahorros' | 'Corriente';
 
   @IsString()
+  @IsNotEmpty({ message: 'El número de cuenta bancaria no puede estar vacío' })
   bancoNumeroCuenta: string;
 
   @IsString()
+  @IsNotEmpty({ message: 'El nombre del dueño de la cuenta no puede estar vacío' })
   bancoNombreDuenoCuenta: string;
 
   @IsEnum(['1', '0'], { message: 'realizaEnvios debe ser "1" (true) o "0" (false)' })
@@ -53,10 +56,25 @@ export class CreateEntrepreneurDTO extends CreateUserDto  {
   @IsEnum(['1', '0'], { message: 'soloRetiraEnTienda debe ser "1" (true) o "0" (false)' })
   soloRetiraEnTienda: '1' | '0';
 
+  // Nueva estructura de dirección
   @IsString()
-  direccionLocal: string;
+  @IsNotEmpty({ message: 'La calle principal no puede estar vacía' })
+  callePrincipal: string;
 
   @IsString()
+  @IsNotEmpty({ message: 'La calle secundaria no puede estar vacía' })
+  calleSecundaria: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'La numeración no puede estar vacía' })
+  numeracion: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'La referencia no puede estar vacía' })
+  referencia: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'El sector local no puede estar vacío' })
   sectorLocal: string;
 
   @IsArray({ message: 'El horario debe ser un arreglo de objetos' })
@@ -64,10 +82,12 @@ export class CreateEntrepreneurDTO extends CreateUserDto  {
   @Type(() => HorarioDTO)
   horario: HorarioDTO[];
 
-  @IsArray({ message: 'fotosLocal debe ser un arreglo de strings' })
+  @IsArray({ message: 'Las fotos del local deben ser un arreglo de strings' })
+  @IsOptional()
   fotosLocal: string[];
 
-  @IsArray({ message: 'fotosLogotipo debe ser un arreglo de strings' })
+  @IsArray({ message: 'Las fotos del logotipo deben ser un arreglo de strings' })
+  @IsOptional()
   fotosLogotipo: string[];
 
   @IsEnum(['1', '0'], { message: 'aceptoTerminos debe ser "1" (true) o "0" (false)' })

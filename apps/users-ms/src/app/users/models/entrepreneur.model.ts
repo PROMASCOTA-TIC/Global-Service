@@ -114,9 +114,34 @@ export class Entrepreneur extends Model {
   @Column({
     type: DataType.STRING(255),
     allowNull: false,
-    field: 'DIRECCION_LOCAL',
+    field: 'CALLE_PRINCIPAL',
   })
-  direccionLocal!: string;
+  callePrincipal!: string;
+
+  @AllowNull(false)
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: false,
+    field: 'CALLE_SECUNDARIA',
+  })
+  calleSecundaria!: string;
+
+  @AllowNull(false)
+  @Column({
+    type: DataType.STRING(50),
+    allowNull: false,
+    field: 'NUMERACION',
+  })
+  numeracion!: string;
+
+  @AllowNull(false)
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: false,
+    field: 'REFERENCIA',
+  })
+  referencia!: string;
+  
 
   @AllowNull(false)
   @Column({

@@ -77,9 +77,22 @@ export class UpdateEntrepreneurDTO {
   @IsEnum(['1', '0'], { message: 'soloRetiraEnTienda debe ser "1" o "0"' })
   soloRetiraEnTienda?: '1' | '0';
 
+  // Nueva estructura de dirección
   @IsOptional()
   @IsString()
-  direccionLocal?: string;
+  callePrincipal?: string;
+
+  @IsOptional()
+  @IsString()
+  calleSecundaria?: string;
+
+  @IsOptional()
+  @IsString()
+  numeracion?: string;
+
+  @IsOptional()
+  @IsString()
+  referencia?: string;
 
   @IsOptional()
   @IsString()

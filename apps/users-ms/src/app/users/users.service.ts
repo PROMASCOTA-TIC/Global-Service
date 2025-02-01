@@ -52,7 +52,10 @@ export class UsersService {
             bancoNombreDuenoCuenta,
             realizaEnvios,
             soloRetiraEnTienda,
-            direccionLocal,
+            callePrincipal,
+            calleSecundaria,
+            numeracion,
+            referencia,
             sectorLocal,
             horario,
             aceptoTerminos,
@@ -82,12 +85,15 @@ export class UsersService {
                 bancoNumeroCuenta,
                 bancoNombreDuenoCuenta,
                 realizaEnvios: realizaEnvios === '1',
-                soloRetiraEnTienda: soloRetiraEnTienda === '1', // Convertir a booleano
-                direccionLocal, // Asegúrate de que esté presente
-                sectorLocal, // Asegúrate de que esté presente
-                horario: horario || [], // Evitar errores si está undefined
-                aceptoTerminos: aceptoTerminos === '1', // Convertir a booleano
-                estado: 'PENDING', // Valor predeterminado para estado
+                soloRetiraEnTienda: soloRetiraEnTienda === '1',
+                callePrincipal,
+                calleSecundaria,
+                numeracion,
+                referencia,
+                sectorLocal,
+                horario: horario || [],
+                aceptoTerminos: aceptoTerminos === '1',
+                estado: 'PENDING',
                 comision: rest.comision || null,
                 ...rest,
             };
@@ -154,13 +160,19 @@ export class UsersService {
             bankAccountOwner: response.bancoNombreDuenoCuenta,
             makeDeliveries: response.realizaEnvios,
             onlyPickUpInStore: response.soloRetiraEnTienda,
-            localAddress: response.direccionLocal,
+            address: {
+                callePrincipal: response.callePrincipal,
+                calleSecundaria: response.calleSecundaria,
+                numeracion: response.numeracion,
+                referencia: response.referencia,
+            },
             localSector: response.sectorLocal,
             businessHours: response.horario,
             acceptedTerms: response.aceptoTerminos,
             state: response.estado,
             commission: response.comision,
-        }
+        };
+    
         return entrepreneur;
     }
 
@@ -225,27 +237,28 @@ export class UsersService {
         const entrepreneur = await this.entrepreneurModel.findOne({
             where: { idEntrepreneur },
         });
-
+    
         if (!entrepreneur) {
             throw new NotFoundException(`No se encontró un emprendedor con el ID: ${idEntrepreneur}`);
         }
+    
         const { idEntrepreneur: _, ...updateData } = updateEntrepreneurDto;
-
-        // Convertir valores booleanos para el modelo
+    
+        // Convertir valores booleanos
         const updatePayload = {
             ...updateData,
-            realizaEnvios: updateData.realizaEnvios === '1', // Convertir a booleano si está presente
-            soloRetiraEnTienda: updateData.soloRetiraEnTienda === '1', // Convertir a booleano si está presente
+            realizaEnvios: updateData.realizaEnvios === '1',
+            soloRetiraEnTienda: updateData.soloRetiraEnTienda === '1',
         };
-
+    
         // Actualizar el emprendedor
         await this.entrepreneurModel.update(updatePayload, {
             where: { idEntrepreneur },
         });
-
+    
         return { message: 'Emprendedor actualizado correctamente' };
     }
-
+    
     // obtener emprendedores por estado
     async findEntrepreneursByState(estado: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<Entrepreneur[]> {
         if (!['PENDING', 'APPROVED', 'REJECTED'].includes(estado)) {

@@ -77,9 +77,22 @@ export class UpdateEntrepreneurDTO {
   @IsEnum(['1', '0'], { message: 'soloRetiraEnTienda debe ser "1" o "0"' })
   soloRetiraEnTienda?: '1' | '0';
 
+  // Nueva estructura de dirección
   @IsOptional()
   @IsString()
-  direccionLocal?: string;
+  callePrincipal?: string;
+
+  @IsOptional()
+  @IsString()
+  calleSecundaria?: string;
+
+  @IsOptional()
+  @IsString()
+  numeracion?: string;
+
+  @IsOptional()
+  @IsString()
+  referencia?: string;
 
   @IsOptional()
   @IsString()
@@ -91,13 +104,15 @@ export class UpdateEntrepreneurDTO {
   @Type(() => HorarioDTO)
   horario?: HorarioDTO[];
 
-  @IsOptional()
   @IsArray({ message: 'fotosLocal debe ser un arreglo de strings' })
-  fotosLocal?: string[];
-
+  @IsString({ each: true })
   @IsOptional()
+  fotosLocal?: string;
+
   @IsArray({ message: 'fotosLogotipo debe ser un arreglo de strings' })
-  fotosLogotipo?: string[];
+  @IsString({ each: true })
+  @IsOptional()
+  fotosLogotipo?: string;
 
   @IsOptional()
   @IsNumber({}, { message: 'La comisión debe ser un número válido' })

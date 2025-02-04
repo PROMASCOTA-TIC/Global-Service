@@ -16,13 +16,11 @@ import {
 import { Type } from 'class-transformer';
 import { CreateUserDto } from './create-user.dto';
 
-export class CreateEntrepreneurDTO extends CreateUserDto  {
-
+export class CreateEntrepreneurDTO extends CreateUserDto {
   @IsString()
   @MinLength(5, { message: 'El nombre debe tener al menos 5 caracteres' })
   @IsNotEmpty({ message: 'El nombre no puede estar vacío' })
   name: string;
-
 
   @IsString()
   nombreEmprendimiento: string;
@@ -53,8 +51,22 @@ export class CreateEntrepreneurDTO extends CreateUserDto  {
   @IsEnum(['1', '0'], { message: 'soloRetiraEnTienda debe ser "1" (true) o "0" (false)' })
   soloRetiraEnTienda: '1' | '0';
 
+  // Nueva estructura de dirección
   @IsString()
-  direccionLocal: string;
+  @IsNotEmpty({ message: 'La calle principal no puede estar vacía' })
+  callePrincipal: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'La calle secundaria no puede estar vacía' })
+  calleSecundaria: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'La numeración no puede estar vacía' })
+  numeracion: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'La referencia no puede estar vacía' })
+  referencia: string;
 
   @IsString()
   sectorLocal: string;
@@ -65,10 +77,12 @@ export class CreateEntrepreneurDTO extends CreateUserDto  {
   horario: HorarioDTO[];
 
   @IsArray({ message: 'fotosLocal debe ser un arreglo de strings' })
-  fotosLocal: string[];
+  @IsString({ each: true })
+  fotosLocal?: string;
 
   @IsArray({ message: 'fotosLogotipo debe ser un arreglo de strings' })
-  fotosLogotipo: string[];
+  @IsString({ each: true })
+  fotosLogotipo?: string;
 
   @IsEnum(['1', '0'], { message: 'aceptoTerminos debe ser "1" (true) o "0" (false)' })
   aceptoTerminos: '1' | '0';

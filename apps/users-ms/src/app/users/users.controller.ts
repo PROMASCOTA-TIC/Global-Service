@@ -46,6 +46,7 @@ export class UsersController {
   //actualizar emprendedor
   @MessagePattern('update_entrepreneur')
   async updateEntrepreneur(@Payload() updateEntrepreneurDto: UpdateEntrepreneurDTO) {
+    console.log('Updating entrepreneur:', updateEntrepreneurDto);
     const { idEntrepreneur, callePrincipal, calleSecundaria, numeracion, referencia } = updateEntrepreneurDto;
     
     if (!idEntrepreneur) {

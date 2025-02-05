@@ -157,26 +157,25 @@ export class UsersService {
             idEntrepreneur: response.idEntrepreneur,
             email: response.user.email,
             name: response.user.name,
-            businessName: response.nombreEmprendimiento,
+            nombreEmprendimiento: response.nombreEmprendimiento,
             ruc: response.ruc,
-            phoneNumber: response.numeroCelular,
-            bankName: response.bancoNombre,
-            bankAccountType: response.bancoTipoCuenta,
-            bankAccountNumber: response.bancoNumeroCuenta,
-            bankAccountOwner: response.bancoNombreDuenoCuenta,
-            makeDeliveries: response.realizaEnvios,
-            onlyPickUpInStore: response.soloRetiraEnTienda,
-            address: {
-                callePrincipal: response.callePrincipal,
-                calleSecundaria: response.calleSecundaria,
-                numeracion: response.numeracion,
-                referencia: response.referencia,
-            },
+            numeroCelular: response.numeroCelular,
+            bancoNombre: response.bancoNombre,
+            bancoTipoCuenta: response.bancoTipoCuenta,
+            bancoNumeroCuenta: response.bancoNumeroCuenta,
+            bancoNombreDuenoCuenta: response.bancoNombreDuenoCuenta,
+            realizaEnvios: response.realizaEnvios,
+            soloRetiraEnTienda: response.soloRetiraEnTienda,
+            callePrincipal: response.callePrincipal,
+            calleSecundaria: response.calleSecundaria,
+            numeracion: response.numeracion,
+            referencia: response.referencia,
             localSector: response.sectorLocal,
-            businessHours: response.horario,
-            acceptedTerms: response.aceptoTerminos,
-            state: response.estado,
-            commission: response.comision,
+            horario: response.horario,
+            estado: response.estado,
+            comision: response.comision,
+            fotosLocal: response.fotosLocal,
+            fotosLogotipo: response.fotosLogotipo
         };
     
         return entrepreneur;
@@ -249,13 +248,19 @@ export class UsersService {
             throw new NotFoundException(`No se encontró un emprendedor con el ID: ${idEntrepreneur}`);
         }
     
-        const { idEntrepreneur: _, password, email, name, ...updateData } = updateEntrepreneurDto;
+        const { idEntrepreneur: _, password, email, name, fotosLocal, fotosLogotipo, ...updateData } = updateEntrepreneurDto;
+    
+        // Convertir arrays de imágenes en strings separados por comas (como en createEntrepreneur)
+        const formattedFotosLocal = Array.isArray(fotosLocal) ? fotosLocal.join(', ') : fotosLocal || '';
+        const formattedFotosLogotipo = Array.isArray(fotosLogotipo) ? fotosLogotipo.join(', ') : fotosLogotipo || '';
     
         // Convertir valores booleanos
         const updatePayload = {
             ...updateData,
             realizaEnvios: updateData.realizaEnvios === '1',
             soloRetiraEnTienda: updateData.soloRetiraEnTienda === '1',
+            fotosLocal: formattedFotosLocal, // Guardamos como string
+            fotosLogotipo: formattedFotosLogotipo, // Guardamos como string
         };
     
         // ✅ Actualizar el modelo Entrepreneur
@@ -280,6 +285,7 @@ export class UsersService {
     
         return { message: 'Emprendedor y usuario actualizados correctamente' };
     }
+    
     
     
     // obtener emprendedores por estado

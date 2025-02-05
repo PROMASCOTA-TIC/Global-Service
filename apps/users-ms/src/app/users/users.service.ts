@@ -242,13 +242,14 @@ export class UsersService {
     async updateEntrepreneur(idEntrepreneur: string, updateEntrepreneurDto: UpdateEntrepreneurDTO) {
         const entrepreneur = await this.entrepreneurModel.findOne({
             where: { idEntrepreneur },
+            include: [{ model: this.user, attributes: ['id', 'email', 'name', 'password'] }],
         });
     
         if (!entrepreneur) {
             throw new NotFoundException(`No se encontró un emprendedor con el ID: ${idEntrepreneur}`);
         }
     
-        const { idEntrepreneur: _, ...updateData } = updateEntrepreneurDto;
+        const { idEntrepreneur: _, password, email, name, ...updateData } = updateEntrepreneurDto;
     
         // Convertir valores booleanos
         const updatePayload = {
@@ -257,13 +258,29 @@ export class UsersService {
             soloRetiraEnTienda: updateData.soloRetiraEnTienda === '1',
         };
     
-        // Actualizar el emprendedor
+        // ✅ Actualizar el modelo Entrepreneur
         await this.entrepreneurModel.update(updatePayload, {
             where: { idEntrepreneur },
         });
     
-        return { message: 'Emprendedor actualizado correctamente' };
+        // ✅ Si hay cambios en email, name o password, actualizarlos en User
+        const userUpdates: Partial<User> = {};
+        if (email) userUpdates.email = email;
+        if (name) userUpdates.name = name;
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            userUpdates.password = hashedPassword;
+        }
+    
+        if (Object.keys(userUpdates).length > 0) {
+            await this.user.update(userUpdates, {
+                where: { id: entrepreneur.user.id },
+            });
+        }
+    
+        return { message: 'Emprendedor y usuario actualizados correctamente' };
     }
+    
     
     // obtener emprendedores por estado
     async findEntrepreneursByState(estado: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<Entrepreneur[]> {

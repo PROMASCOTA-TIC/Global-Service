@@ -24,4 +24,8 @@ export class UpdateEntrepreneurDTO extends PartialType(CreateEntrepreneurDTO) {
   @IsOptional()
   @IsString()
   idEntrepreneur?: string;
+
+  @IsOptional()
+  @IsString()
+  estado?: 'PENDING' | 'APPROVED' | 'REJECTED'; 
 }

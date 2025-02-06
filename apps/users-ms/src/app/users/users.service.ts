@@ -257,6 +257,7 @@ export class UsersService {
         // Convertir valores booleanos
         const updatePayload = {
             ...updateData,
+            estado: updateData.estado || entrepreneur.estado, 
             realizaEnvios: updateData.realizaEnvios === '1',
             soloRetiraEnTienda: updateData.soloRetiraEnTienda === '1',
             fotosLocal: formattedFotosLocal, // Mantener valor actual si no se envía
@@ -289,28 +290,37 @@ export class UsersService {
 
     
     // obtener emprendedores por estado
-    async findEntrepreneursByState(estado: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<Entrepreneur[]> {
-        if (!['PENDING', 'APPROVED', 'REJECTED'].includes(estado)) {
-            throw new BadRequestException(`Estado inválido: ${estado}`);
-        }
-
+    async findEntrepreneursByState(estado: 'PENDING' | 'APPROVED' | 'REJECTED') {
         const entrepreneurs = await this.entrepreneurModel.findAll({
-            where: { estado },
-            include: [
-                {
-                    model: this.user,
-                    attributes: ['id', 'email', 'name'],
-                },
-            ],
+          where: { estado },
+          include: [
+            {
+              model: this.user,
+              attributes: ['name', 'email'],
+              required: true,
+            },
+          ],
+          attributes: ['numeroCelular', 'ruc', 'nombreEmprendimiento', 'createdAt', 'estado', 'idEntrepreneur','comision'],
         });
-
+      
         if (!entrepreneurs.length) {
-            throw new NotFoundException(`No se encontraron emprendedores con el estado: ${estado}`);
+          throw new NotFoundException('No hay emprendedores con el estado proporcionado.');
         }
+      
+        return entrepreneurs.map(entrepreneur => ({
+          idEntrepreneur: entrepreneur.idEntrepreneur,
+          name: entrepreneur.user.name,
+          email: entrepreneur.user.email,
+          numeroCelular: entrepreneur.numeroCelular,
+          ruc: entrepreneur.ruc,
+          nombreEmprendimiento: entrepreneur.nombreEmprendimiento,
+          createdAt: entrepreneur.createdAt,
+          status: entrepreneur.estado,
+          comision: entrepreneur.comision,
+        }));
+      }
 
-        return entrepreneurs;
-    }
-
+      
     //update status y comision
     async updateEntrepreneurStatusAndCommission(
         idEntrepreneur: string,
@@ -501,4 +511,5 @@ export class UsersService {
         const { id: _, ...admin } = updateAdminDto;
         return this.user.update(admin, { where: { id } });
     }
+
 }

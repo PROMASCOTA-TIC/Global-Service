@@ -250,17 +250,17 @@ export class UsersService {
     
         const { idEntrepreneur: _, password, email, name, fotosLocal, fotosLogotipo, ...updateData } = updateEntrepreneurDto;
     
-        // Convertir arrays de imágenes en strings separados por comas (como en createEntrepreneur)
-        const formattedFotosLocal = Array.isArray(fotosLocal) ? fotosLocal.join(', ') : fotosLocal || '';
-        const formattedFotosLogotipo = Array.isArray(fotosLogotipo) ? fotosLogotipo.join(', ') : fotosLogotipo || '';
+        // 🔹 Si no se envían `fotosLocal` o `fotosLogotipo`, mantener el valor actual en la BD.
+        const formattedFotosLocal = Array.isArray(fotosLocal) ? fotosLocal.join(', ') : (fotosLocal !== undefined ? fotosLocal : entrepreneur.fotosLocal);
+        const formattedFotosLogotipo = Array.isArray(fotosLogotipo) ? fotosLogotipo.join(', ') : (fotosLogotipo !== undefined ? fotosLogotipo : entrepreneur.fotosLogotipo);
     
         // Convertir valores booleanos
         const updatePayload = {
             ...updateData,
             realizaEnvios: updateData.realizaEnvios === '1',
             soloRetiraEnTienda: updateData.soloRetiraEnTienda === '1',
-            fotosLocal: formattedFotosLocal, // Guardamos como string
-            fotosLogotipo: formattedFotosLogotipo, // Guardamos como string
+            fotosLocal: formattedFotosLocal, // Mantener valor actual si no se envía
+            fotosLogotipo: formattedFotosLogotipo, // Mantener valor actual si no se envía
         };
     
         // ✅ Actualizar el modelo Entrepreneur
@@ -286,7 +286,7 @@ export class UsersService {
         return { message: 'Emprendedor y usuario actualizados correctamente' };
     }
     
-    
+
     
     // obtener emprendedores por estado
     async findEntrepreneursByState(estado: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<Entrepreneur[]> {

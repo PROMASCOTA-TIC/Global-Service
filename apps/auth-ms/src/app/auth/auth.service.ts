@@ -4,11 +4,11 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { firstValueFrom } from 'rxjs';
 import * as bcrypt from 'bcrypt';
-//import { CreateEntrepreneurDto } from './dto/create-entrepreneur.dto';
 import { LoginDto } from './dto/login.dto';
 import { envs } from '../../config';
 import { CreatePetOwnerDto } from './dto/create-pet-owner.dto';
 import { CreateEntrepreneurDTO } from './dto/create-entrepreneur.dto';
+import { HttpException, HttpStatus } from '@nestjs/common'; 
 
 @Injectable()
 export class AuthService {
@@ -115,29 +115,63 @@ export class AuthService {
     return user.data;
   }
 
-async loginEntrepreneur(loginUserDto: LoginDto) {
-  const { email, password } = loginUserDto;
-  console.log(email);
-  const user = await firstValueFrom(
-    this.httpService.post('http://localhost:3001/api/users/find-entrepreneur-by-email', {
-      email,
-    })
-  )
-  const isPasswordValid = await bcrypt.compareSync(password, user.data.password);
-  if(!isPasswordValid){
-    throw new RpcException({
-      message: 'User/Password not valid'
-    });
-  }
-  const { password: _, ...result } = user.data;
-  const token = await this.signJWT(result.email);
-  const entrepreneurData = {
-    id: result.id,
-    email: result.email,
-    token: token
-  }
-  return entrepreneurData;
+  async loginEntrepreneur(loginUserDto: LoginDto) {
+    const { email, password } = loginUserDto;
+    console.log(email);
+
+    try {
+        const user = await firstValueFrom(
+            this.httpService.post('http://localhost:3001/api/users/find-entrepreneur-by-email', { email })
+        );
+
+        if (!user.data) {
+            throw new RpcException({
+                status: 404,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        if (user.data.estado !== 'APPROVED') {
+            throw new RpcException({
+                status: 403,
+                message: `No es posible iniciar sesión. Estado de la cuenta: Pendiente. Espera aprobación del administrador.`
+            });
+        }
+
+        const isPasswordValid = bcrypt.compareSync(password, user.data.password);
+        if (!isPasswordValid) {
+            throw new RpcException({
+                status: 401,
+                message: 'Contraseña incorrecta'
+            });
+        }
+
+        const { password: _, ...result } = user.data;
+        const token = await this.signJWT(result.email);
+
+        const entrepreneurData = {
+            id: result.id,
+            email: result.email,
+            idEntrepreneur: result.idEntrepreneur,
+            token: token
+        };
+
+        return entrepreneurData;
+    } catch (error) {
+        console.error('Error en loginEntrepreneur:', error);
+
+        if (error instanceof RpcException) {
+            throw error; 
+        }
+
+        throw new RpcException({
+            status: 500,
+            message: 'Error interno en el servidor. Por favor, intenta de nuevo más tarde.'
+        });
+    }
 }
+
+
 
 async registerEntrepreneur(createEntrepreneurDto: CreateEntrepreneurDTO) {
   const { ...entrepreneur } = createEntrepreneurDto;

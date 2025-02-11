@@ -222,21 +222,32 @@ export class UsersService {
     // Buscar emprendedor por correo electronicvo 
     async findEntrepreneurByEmail(email: string) {
         console.log('Looking for entrepreneur in DB with email:', email);
+        
         const response = await this.user.findOne({
             where: { email: email, isEntrepreneur: '1' },
-            include: [Entrepreneur]
+            include: [{
+                model: Entrepreneur, 
+                as: 'entrepreneur', // Alias correcto de la relación
+                required: true // Asegura que solo devuelve usuarios con emprendedor asociado
+            }]
         });
+    
         if (!response) {
             throw new RpcException('User not found');
         }
-        const entrEpreneur = {
-            id: response.entrepreneur.id,
+    
+        if (!response.entrepreneur) {
+            throw new RpcException('Entrepreneur not found for this user');
+        }
+    
+        return {
+            idEntrepreneur: response.entrepreneur.idEntrepreneur, 
             email: response.email,
             password: response.password,
-        }
-        return entrEpreneur;
-
+            estado: response.entrepreneur.estado,
+        };
     }
+    
     //actualizar emprendedor
     async updateEntrepreneur(idEntrepreneur: string, updateEntrepreneurDto: UpdateEntrepreneurDTO) {
         const entrepreneur = await this.entrepreneurModel.findOne({

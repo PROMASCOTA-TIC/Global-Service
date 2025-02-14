@@ -157,26 +157,25 @@ export class UsersService {
             idEntrepreneur: response.idEntrepreneur,
             email: response.user.email,
             name: response.user.name,
-            businessName: response.nombreEmprendimiento,
+            nombreEmprendimiento: response.nombreEmprendimiento,
             ruc: response.ruc,
-            phoneNumber: response.numeroCelular,
-            bankName: response.bancoNombre,
-            bankAccountType: response.bancoTipoCuenta,
-            bankAccountNumber: response.bancoNumeroCuenta,
-            bankAccountOwner: response.bancoNombreDuenoCuenta,
-            makeDeliveries: response.realizaEnvios,
-            onlyPickUpInStore: response.soloRetiraEnTienda,
-            address: {
-                callePrincipal: response.callePrincipal,
-                calleSecundaria: response.calleSecundaria,
-                numeracion: response.numeracion,
-                referencia: response.referencia,
-            },
+            numeroCelular: response.numeroCelular,
+            bancoNombre: response.bancoNombre,
+            bancoTipoCuenta: response.bancoTipoCuenta,
+            bancoNumeroCuenta: response.bancoNumeroCuenta,
+            bancoNombreDuenoCuenta: response.bancoNombreDuenoCuenta,
+            realizaEnvios: response.realizaEnvios,
+            soloRetiraEnTienda: response.soloRetiraEnTienda,
+            callePrincipal: response.callePrincipal,
+            calleSecundaria: response.calleSecundaria,
+            numeracion: response.numeracion,
+            referencia: response.referencia,
             localSector: response.sectorLocal,
-            businessHours: response.horario,
-            acceptedTerms: response.aceptoTerminos,
-            state: response.estado,
-            commission: response.comision,
+            horario: response.horario,
+            estado: response.estado,
+            comision: response.comision,
+            fotosLocal: response.fotosLocal,
+            fotosLogotipo: response.fotosLogotipo
         };
     
         return entrepreneur;
@@ -223,71 +222,116 @@ export class UsersService {
     // Buscar emprendedor por correo electronicvo 
     async findEntrepreneurByEmail(email: string) {
         console.log('Looking for entrepreneur in DB with email:', email);
+        
         const response = await this.user.findOne({
             where: { email: email, isEntrepreneur: '1' },
-            include: [Entrepreneur]
+            include: [{
+                model: Entrepreneur, 
+                as: 'entrepreneur', // Alias correcto de la relación
+                required: true // Asegura que solo devuelve usuarios con emprendedor asociado
+            }]
         });
+    
         if (!response) {
             throw new RpcException('User not found');
         }
-        const entrEpreneur = {
-            id: response.entrepreneur.id,
+    
+        if (!response.entrepreneur) {
+            throw new RpcException('Entrepreneur not found for this user');
+        }
+    
+        return {
+            idEntrepreneur: response.entrepreneur.idEntrepreneur, 
             email: response.email,
             password: response.password,
-        }
-        return entrEpreneur;
-
+            estado: response.entrepreneur.estado,
+        };
     }
+    
     //actualizar emprendedor
     async updateEntrepreneur(idEntrepreneur: string, updateEntrepreneurDto: UpdateEntrepreneurDTO) {
         const entrepreneur = await this.entrepreneurModel.findOne({
             where: { idEntrepreneur },
+            include: [{ model: this.user, attributes: ['id', 'email', 'name', 'password'] }],
         });
     
         if (!entrepreneur) {
             throw new NotFoundException(`No se encontró un emprendedor con el ID: ${idEntrepreneur}`);
         }
     
-        const { idEntrepreneur: _, ...updateData } = updateEntrepreneurDto;
+        const { idEntrepreneur: _, password, email, name, fotosLocal, fotosLogotipo, ...updateData } = updateEntrepreneurDto;
+    
+        // 🔹 Si no se envían `fotosLocal` o `fotosLogotipo`, mantener el valor actual en la BD.
+        const formattedFotosLocal = Array.isArray(fotosLocal) ? fotosLocal.join(', ') : (fotosLocal !== undefined ? fotosLocal : entrepreneur.fotosLocal);
+        const formattedFotosLogotipo = Array.isArray(fotosLogotipo) ? fotosLogotipo.join(', ') : (fotosLogotipo !== undefined ? fotosLogotipo : entrepreneur.fotosLogotipo);
     
         // Convertir valores booleanos
         const updatePayload = {
             ...updateData,
+            estado: updateData.estado || entrepreneur.estado, 
             realizaEnvios: updateData.realizaEnvios === '1',
             soloRetiraEnTienda: updateData.soloRetiraEnTienda === '1',
+            fotosLocal: formattedFotosLocal, // Mantener valor actual si no se envía
+            fotosLogotipo: formattedFotosLogotipo, // Mantener valor actual si no se envía
         };
     
-        // Actualizar el emprendedor
+        // ✅ Actualizar el modelo Entrepreneur
         await this.entrepreneurModel.update(updatePayload, {
             where: { idEntrepreneur },
         });
     
-        return { message: 'Emprendedor actualizado correctamente' };
+        // ✅ Si hay cambios en email, name o password, actualizarlos en User
+        const userUpdates: Partial<User> = {};
+        if (email) userUpdates.email = email;
+        if (name) userUpdates.name = name;
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            userUpdates.password = hashedPassword;
+        }
+    
+        if (Object.keys(userUpdates).length > 0) {
+            await this.user.update(userUpdates, {
+                where: { id: entrepreneur.user.id },
+            });
+        }
+    
+        return { message: 'Emprendedor y usuario actualizados correctamente' };
     }
     
+
+    
     // obtener emprendedores por estado
-    async findEntrepreneursByState(estado: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<Entrepreneur[]> {
-        if (!['PENDING', 'APPROVED', 'REJECTED'].includes(estado)) {
-            throw new BadRequestException(`Estado inválido: ${estado}`);
-        }
-
+    async findEntrepreneursByState(estado: 'PENDING' | 'APPROVED' | 'REJECTED') {
         const entrepreneurs = await this.entrepreneurModel.findAll({
-            where: { estado },
-            include: [
-                {
-                    model: this.user,
-                    attributes: ['id', 'email', 'name'],
-                },
-            ],
+          where: { estado },
+          include: [
+            {
+              model: this.user,
+              attributes: ['name', 'email'],
+              required: true,
+            },
+          ],
+          attributes: ['numeroCelular', 'ruc', 'nombreEmprendimiento', 'createdAt', 'estado', 'idEntrepreneur','comision'],
         });
-
+      
         if (!entrepreneurs.length) {
-            throw new NotFoundException(`No se encontraron emprendedores con el estado: ${estado}`);
+          throw new NotFoundException('No hay emprendedores con el estado proporcionado.');
         }
+      
+        return entrepreneurs.map(entrepreneur => ({
+          idEntrepreneur: entrepreneur.idEntrepreneur,
+          name: entrepreneur.user.name,
+          email: entrepreneur.user.email,
+          numeroCelular: entrepreneur.numeroCelular,
+          ruc: entrepreneur.ruc,
+          nombreEmprendimiento: entrepreneur.nombreEmprendimiento,
+          createdAt: entrepreneur.createdAt,
+          status: entrepreneur.estado,
+          comision: entrepreneur.comision,
+        }));
+      }
 
-        return entrepreneurs;
-    }
-
+      
     //update status y comision
     async updateEntrepreneurStatusAndCommission(
         idEntrepreneur: string,
@@ -478,4 +522,5 @@ export class UsersService {
         const { id: _, ...admin } = updateAdminDto;
         return this.user.update(admin, { where: { id } });
     }
+
 }

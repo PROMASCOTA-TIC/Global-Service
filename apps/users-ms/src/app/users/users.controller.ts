@@ -47,6 +47,7 @@ export class UsersController {
   //actualizar emprendedor
   @MessagePattern('update_entrepreneur')
   async updateEntrepreneur(@Payload() updateEntrepreneurDto: UpdateEntrepreneurDTO) {
+    console.log('Updating entrepreneur:', updateEntrepreneurDto);
     const { idEntrepreneur, callePrincipal, calleSecundaria, numeracion, referencia } = updateEntrepreneurDto;
     
     if (!idEntrepreneur) {
@@ -62,7 +63,8 @@ export class UsersController {
     return this.usersService.updateEntrepreneur(idEntrepreneur, updateEntrepreneurDto);
   }
 
-  
+
+
   // obtener emprendedor por estado
   @MessagePattern({ cmd: 'get_entrepreneurs_by_state' })
   async getEntrepreneursByState(@Payload() estado: 'PENDING' | 'APPROVED' | 'REJECTED') {

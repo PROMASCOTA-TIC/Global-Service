@@ -1,12 +1,9 @@
 import {
   IsString,
-  IsEmail,
   IsArray,
   IsOptional,
   IsEnum,
-  Matches,
   MinLength,
-  MaxLength,
   IsNumber,
   Min,
   Max,
@@ -51,7 +48,6 @@ export class CreateEntrepreneurDTO extends CreateUserDto {
   @IsEnum(['1', '0'], { message: 'soloRetiraEnTienda debe ser "1" (true) o "0" (false)' })
   soloRetiraEnTienda: '1' | '0';
 
-  // Nueva estructura de dirección
   @IsString()
   @IsNotEmpty({ message: 'La calle principal no puede estar vacía' })
   callePrincipal: string;

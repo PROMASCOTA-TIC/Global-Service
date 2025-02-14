@@ -114,9 +114,34 @@ export class Entrepreneur extends Model {
   @Column({
     type: DataType.STRING(255),
     allowNull: false,
-    field: 'DIRECCION_LOCAL',
+    field: 'CALLE_PRINCIPAL',
   })
-  direccionLocal!: string;
+  callePrincipal!: string;
+
+  @AllowNull(false)
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: false,
+    field: 'CALLE_SECUNDARIA',
+  })
+  calleSecundaria!: string;
+
+  @AllowNull(false)
+  @Column({
+    type: DataType.STRING(50),
+    allowNull: false,
+    field: 'NUMERACION',
+  })
+  numeracion!: string;
+
+  @AllowNull(false)
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: false,
+    field: 'REFERENCIA',
+  })
+  referencia!: string;
+  
 
   @AllowNull(false)
   @Column({
@@ -139,21 +164,19 @@ export class Entrepreneur extends Model {
     cerrado?: boolean;
   }>;
 
-  @AllowNull(true)
   @Column({
-    type: DataType.JSON,
-    allowNull: true,
+    type: DataType.TEXT,
+    allowNull: false,
     field: 'FOTOS_LOCAL',
   })
-  fotosLocal!: string[];
+  fotosLocal: string;
 
-  @AllowNull(true)
   @Column({
-    type: DataType.JSON,
-    allowNull: true,
+    type: DataType.TEXT,
+    allowNull: false,
     field: 'FOTOS_LOGOTIPO',
   })
-  fotosLogotipo!: string[];
+  fotosLogotipo: string;
 
   @AllowNull(false)
   @Column({

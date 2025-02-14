@@ -45,14 +45,23 @@ export class UsersController {
   }
 
   //actualizar emprendedor
-@MessagePattern('update_entrepreneur')
-async updateEntrepreneur(@Payload() updateEntrepreneurDto: UpdateEntrepreneurDTO) {
-  const { idEntrepreneur } = updateEntrepreneurDto;
-  if (!idEntrepreneur) {
-    throw new BadRequestException('El campo idEntrepreneur es obligatorio.');
+  @MessagePattern('update_entrepreneur')
+  async updateEntrepreneur(@Payload() updateEntrepreneurDto: UpdateEntrepreneurDTO) {
+    console.log('Updating entrepreneur:', updateEntrepreneurDto);
+    const { idEntrepreneur, callePrincipal, calleSecundaria, numeracion, referencia } = updateEntrepreneurDto;
+    
+    if (!idEntrepreneur) {
+      throw new BadRequestException('El campo idEntrepreneur es obligatorio.');
+    }
+  
+    // Validar que la dirección esté completa solo si se está actualizando
+    if ((callePrincipal || calleSecundaria || numeracion || referencia) &&
+        (!callePrincipal || !calleSecundaria || !numeracion || !referencia)) {
+      throw new BadRequestException('Si se actualiza la dirección, todos sus campos deben ser proporcionados.');
+    }
+  
+    return this.usersService.updateEntrepreneur(idEntrepreneur, updateEntrepreneurDto);
   }
-  return this.usersService.updateEntrepreneur(idEntrepreneur, updateEntrepreneurDto);
-}
 
 
 

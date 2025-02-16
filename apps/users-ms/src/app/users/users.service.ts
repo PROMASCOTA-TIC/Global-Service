@@ -64,13 +64,11 @@ export class UsersService {
         } = createEntrepreneurDto;
     
         try {
-            // Hashear la contraseña
-            const passwordHash = await bcrypt.hash(password, 10);
+           
     
-            // Crear usuario
             const user = await this.createUser({
                 email,
-                password: passwordHash,
+                password: password,
                 name,
                 isEntrepreneur: '1',
             });
